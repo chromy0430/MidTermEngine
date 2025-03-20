@@ -16,7 +16,7 @@ public class testscrip : MonoBehaviour
             // 스타일 설정 (텍스트 크기, 색상 등)
             GUIStyle style = new GUIStyle();
             style.fontSize = 20;
-            style.normal.textColor = Color.white;
+            style.normal.textColor = Color.black;
 
             // FPS 계산
             float msec = deltaTime * 1000.0f;
