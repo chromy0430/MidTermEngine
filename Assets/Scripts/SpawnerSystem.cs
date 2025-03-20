@@ -5,6 +5,7 @@ using Unity.Burst;
 [BurstCompile]
 public partial struct SpawnerSystem : ISystem
 {
+    
     public void OnCreate(ref SystemState state) { }
 
     public void OnDestroy(ref SystemState state) { }
@@ -26,8 +27,11 @@ public partial struct SpawnerSystem : ISystem
         // If the next spawn time has passed.
         if (spawner.ValueRO.NextSpawnTime < SystemAPI.Time.ElapsedTime)
         {
+            UnityEngine.Debug.Log($"NextSpawnTime: {spawner.ValueRO.NextSpawnTime}, ElapsedTime: {SystemAPI.Time.ElapsedTime}");
             // Spawns a new entity and positions it at the spawner.
             Entity newEntity = state.EntityManager.Instantiate(spawner.ValueRO.Prefab);
+            spawner.ValueRW.a += 1;
+            UnityEngine.Debug.Log($"Spawner a 증가: {spawner.ValueRW.a}");
             // LocalPosition.FromPosition returns a Transform initialized with the given position.
             state.EntityManager.SetComponentData(newEntity, LocalTransform.FromPosition(spawner.ValueRO.SpawnPosition));
 

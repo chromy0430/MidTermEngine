@@ -46,7 +46,7 @@
             // If the next spawn time has passed.
             if (spawner.NextSpawnTime < ElapsedTime)
             {
-                for (int i = 0; i < 200; i++)
+                for (int i = 0; i < 100; i++)
                 {
                     // Spawns a new entity and positions it at the spawner.
                     Entity newEntity = Ecb.Instantiate(chunkIndex, spawner.Prefab);

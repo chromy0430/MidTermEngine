@@ -19,7 +19,8 @@ public partial struct NavAgentSystem : ISystem
             if(navAgent.ValueRO.nextPathCalculateTime < SystemAPI.Time.ElapsedTime)
             {
                 UnityEngine.Debug.Log("Calculating path..."); // 경로 계산 시도 로그
-                navAgent.ValueRW.nextPathCalculateTime += 1;
+                navAgent.ValueRW.nextPathCalculateTime = SystemAPI.Time.ElapsedTime + 0.2f;
+                //navAgent.ValueRW.nextPathCalculateTime += 1f;
                 navAgent.ValueRW.pathCalculated = false;
                 CalculatePath(navAgent, transform, waypointBuffer, ref state);
             }
@@ -30,11 +31,6 @@ public partial struct NavAgentSystem : ISystem
                 UnityEngine.Debug.Log($"Moving with {waypointBuffer.Length} waypoints"); // 이동 시도 로그
                 Move(navAgent, transform, waypointBuffer, ref state);
             }
-            /*else
-            {
-                UnityEngine.Debug.Log($"Moving with {waypointBuffer.Length} waypoints"); // 이동 시도 로그
-                Move(navAgent, transform, waypointBuffer, ref state);
-            }*/
         }
     }
 
