@@ -1548,7 +1548,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3002088222259654204}
   - component: {fileID: 2419976143816952671}
-  - component: {fileID: 6095614438013462505}
   - component: {fileID: 2002984730945815509}
   - component: {fileID: 5276645622518868061}
   m_Layer: 0
@@ -1586,7 +1585,7 @@ Animator:
   m_GameObject: {fileID: 7154893331529920598}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: ffdfcb810f2918b4f8fe9f917f07bc78, type: 3}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: bb7bdc89c84c89b48b8f5d52f0c528ba, type: 2}
   m_CullingMode: 1
   m_UpdateMode: 0
   m_ApplyRootMotion: 1
@@ -1597,22 +1596,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &6095614438013462505
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7154893331529920598}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3b15cf1698d6dd6499deea70555e5b99, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 10
-  jumpSpeed: 8
-  gravity: 20
-  rotationSpeed: 10
 --- !u!195 &2002984730945815509
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -1620,7 +1603,7 @@ NavMeshAgent:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7154893331529920598}
-  m_Enabled: 0
+  m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
   m_Speed: 3.5

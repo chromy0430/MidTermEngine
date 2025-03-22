@@ -6,14 +6,14 @@ using Unity.Burst;
 
 public class EnemySpawner : MonoBehaviour
 {
-    [SerializeField] private GameObject enemyPrefab;    // NavMeshAgent°¡ Æ÷ÇÔµÈ Àû ÇÁ¸®ÆÕ
-    [SerializeField] private Transform player;          // ÇÃ·¹ÀÌ¾î transform
-    [SerializeField] private float moveSpeed = 5f;      // ÀÌµ¿ ¼Óµµ (NavMeshAgent¿¡ ¹İ¿µ)
+    [SerializeField] private GameObject enemyPrefab;    // NavMeshAgentê°€ í¬í•¨ëœ ì  í”„ë¦¬íŒ¹
+    [SerializeField] private Transform player;          // í”Œë ˆì´ì–´ transform
+    [SerializeField] private float moveSpeed = 5f;      // ì´ë™ ì†ë„ (NavMeshAgentì— ë°˜ì˜)
 
     private GameObject[] enemyInstances;
     private NavMeshAgent[] enemyAgents;
-    private NativeArray<Vector3> enemyPositions;        // Àû À§Ä¡
-    private NativeArray<Vector3> targetDirections;      // Job¿¡¼­ °è»êµÈ ¹æÇâ
+    private NativeArray<Vector3> enemyPositions;        // ì  ìœ„ì¹˜
+    private NativeArray<Vector3> targetDirections;      // Jobì—ì„œ ê³„ì‚°ëœ ë°©í–¥
     private const int ENEMY_COUNT = 200;
 
     void Start()
@@ -23,7 +23,7 @@ public class EnemySpawner : MonoBehaviour
         enemyPositions = new NativeArray<Vector3>(ENEMY_COUNT, Allocator.Persistent);
         targetDirections = new NativeArray<Vector3>(ENEMY_COUNT, Allocator.Persistent);
 
-        // Àû ¼ÒÈ¯
+        // ì  ì†Œí™˜
         for (int i = 0; i < ENEMY_COUNT; i++)
         {
             Vector3 spawnPosition = new Vector3(
@@ -47,13 +47,13 @@ public class EnemySpawner : MonoBehaviour
 
     void Update()
     {
-        // Àû À§Ä¡ ¾÷µ¥ÀÌÆ®
+        // ì  ìœ„ì¹˜ ì—…ë°ì´íŠ¸
         for (int i = 0; i < ENEMY_COUNT; i++)
         {
             enemyPositions[i] = enemyInstances[i].transform.position;
         }
 
-        // Job ½ÇÇà: ÇÃ·¹ÀÌ¾î¸¦ ÇâÇÑ ¹æÇâ °è»ê
+        // Job ì‹¤í–‰: í”Œë ˆì´ì–´ë¥¼ í–¥í•œ ë°©í–¥ ê³„ì‚°
         ChaseDirectionJob chaseJob = new ChaseDirectionJob
         {
             playerPosition = player.position,
@@ -64,8 +64,8 @@ public class EnemySpawner : MonoBehaviour
         JobHandle jobHandle = chaseJob.Schedule(ENEMY_COUNT, 64);
         jobHandle.Complete();
 
-        // NavMeshAgent¿¡ °á°ú Àû¿ë
-        for (int i = 0; i < ENEMY_COUNT; i++)
+        // NavMeshAgentì— ê²°ê³¼ ì ìš©
+        for (int i = 0; i < ENEMY_COUNT; i++) 
         {
             Vector3 targetPosition = enemyPositions[i] + targetDirections[i];
             enemyAgents[i].SetDestination(targetPosition);
@@ -88,8 +88,8 @@ public struct ChaseDirectionJob : IJobParallelFor
 
     public void Execute(int index)
     {
-        // ÇÃ·¹ÀÌ¾î¸¦ ÇâÇÑ ¹æÇâ °è»ê
+        // í”Œë ˆì´ì–´ë¥¼ í–¥í•œ ë°©í–¥ ê³„ì‚°
         Vector3 direction = (playerPosition - enemyPositions[index]).normalized;
-        targetDirections[index] = direction * 5f; // ÀÌµ¿ °Å¸® Á¶Á¤ (ÀÓÀÇ °ª)
+        targetDirections[index] = direction * 5f; // ì´ë™ ê±°ë¦¬ ì¡°ì • (ì„ì˜ ê°’)
     }
 }

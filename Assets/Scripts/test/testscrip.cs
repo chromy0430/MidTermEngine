@@ -14,7 +14,7 @@ public class testscrip : MonoBehaviour
         void OnGUI()
         {
             // 스타일 설정 (텍스트 크기, 색상 등)
-            GUIStyle style = new GUIStyle();
+            GUIStyle style = new GUIStyle(); 
             style.fontSize = 20;
             style.normal.textColor = Color.black;
 

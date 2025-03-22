@@ -2,188 +2,126 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    #region Inspector Variables
-    [Header("Movement Settings")]
-    [SerializeField] private float walkSpeed = 5f;         // °È±â ¼Óµµ
-    [SerializeField] private float runSpeed = 10f;         // ´Ş¸®±â ¼Óµµ
-    [SerializeField] private float jumpSpeed = 8f;         // Á¡ÇÁ ¼Óµµ
-    [SerializeField] private float gravity = 20f;          // Áß·Â °¡¼Óµµ
-    [SerializeField] private float rotationSpeed = 10f;    // È¸Àü ¼Óµµ
-
-    [Header("Audio Settings")]
-    [SerializeField] private AudioClip landingAudioClip;   // ÂøÁö ¼Ò¸®
-    [SerializeField] private AudioClip[] footstepAudioClips; // ¹ß¼Ò¸® ¹è¿­
-    [Range(0, 1)][SerializeField] private float footstepAudioVolume = 0.5f; // ¹ß¼Ò¸® º¼·ı
-
-    [Header("Ground Check Settings")]
-    [SerializeField] private float groundedOffset = -0.14f; // Áö¸é Ã¼Å© ¿ÀÇÁ¼Â
-    [SerializeField] private float groundedRadius = 0.28f;  // Áö¸é Ã¼Å© ¹İ°æ
-    [SerializeField] private LayerMask groundLayers;        // Áö¸é ·¹ÀÌ¾î
-    #endregion
-
-    #region Private Variables
     private CharacterController controller;
     private Animator animator;
-    private Vector3 moveDirection;
-    private float yVelocity;
-    private float moveSpeed;              // ÇöÀç ÀÌµ¿ ¼Óµµ (°È±â/´Ş¸®±â ÀüÈ¯¿ë)
-    private bool grounded = true;
-    private bool hasAnimator;
 
-    // Animation Variables
-    private float animationBlend;         // ¾Ö´Ï¸ŞÀÌ¼Ç ºí·»µù ¼Óµµ
-    private int animIDSpeed;
-    private int animIDGrounded;
-    private int animIDJump;
-    private int animIDFreeFall;
-    private int animIDMotionSpeed;
-    #endregion
+    // ì´ë™ ê´€ë ¨ ë³€ìˆ˜
+    public float walkSpeed = 5f;  // ê±·ê¸° ì†ë„ (Walk_Nì— ë§ì¶¤)
+    public float runSpeed = 10f;  // ë‹¬ë¦¬ê¸° ì†ë„ (Run_Nì— ë§ì¶¤)
+    private float currentSpeed;   // í˜„ì¬ ì†ë„
+    public float gravity = -9.81f;
+    public float jumpForce = 5f;
+    private float yVelocity = 0f;
+    Vector3 movement;
 
-    #region Unity Methods
+    // íšŒì „ ê´€ë ¨ ë³€ìˆ˜
+    public float rotationSpeed = 10f;
+    public float mouseSensitivity = 1000f;
+
+    // ì• ë‹ˆë©”ì´ì…˜ ê´€ë ¨ ë³€ìˆ˜
+    private bool isGrounded;
+    private bool isFreeFalling;
+    private float lastMotionSpeed;
+
+    [Header("Audio Settings")]
+    [SerializeField] private AudioClip landingAudioClip;   // ì°©ì§€ ì†Œë¦¬
+    [SerializeField] private AudioClip[] footstepAudioClips; // ë°œì†Œë¦¬ ë°°ì—´
+    [Range(0, 1)][SerializeField] private float footstepAudioVolume = 0.5f; // ë°œì†Œë¦¬ ë³¼ë¥¨
+
     void Start()
     {
-        InitializeComponents();
-        moveSpeed = walkSpeed; // ÃÊ±â ¼Óµµ´Â °È±â ¼Óµµ·Î ¼³Á¤
+        TryGetComponent<CharacterController>(out controller);
+        TryGetComponent<Animator>(out animator);
+        // ì»¤ì„œ ì ê¸ˆ (ì„ íƒì‚¬í•­)
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     void Update()
     {
+        KeyInput();
+        MouseInput();
+        MotionSpeed();
+        Jump();
         GroundedCheck();
-        HandleInput();
-        ApplyGravity();
-        MoveCharacter();
-        UpdateAnimation();
-    }
 
-    void OnDrawGizmosSelected()
-    {
-        DrawGroundCheckGizmo();
-    }
-    #endregion
-
-    #region Initialization
-    private void InitializeComponents()
-    {
-        if (!TryGetComponent(out controller))
+        // ì´ë™ ì ìš©
+        if (movement.magnitude >= 0.1f)
         {
-            Debug.LogError("Player must have a CharacterController component!");
+            Vector3 moveDirection = transform.TransformDirection(movement) * currentSpeed;
+            moveDirection.y = yVelocity;
+            controller.Move(moveDirection * Time.deltaTime);
+            animator.SetBool("Moving", true);
         }
-
-        hasAnimator = TryGetComponent(out animator);
-        if (hasAnimator)
+        else
         {
-            AssignAnimationIDs();
+            controller.Move(new Vector3(0, yVelocity, 0) * Time.deltaTime);
+            animator.SetBool("Moving", false);
         }
     }
 
-    private void AssignAnimationIDs()
+    private void KeyInput()
     {
-        animIDSpeed = Animator.StringToHash("Speed");
-        animIDGrounded = Animator.StringToHash("Grounded");
-        animIDJump = Animator.StringToHash("Jump");
-        animIDFreeFall = Animator.StringToHash("FreeFall");
-        animIDMotionSpeed = Animator.StringToHash("MotionSpeed");
-    }
-    #endregion
-
-    #region Movement Logic
-    private void HandleInput()
-    {
+        // ì´ë™ ì²˜ë¦¬
         float horizontal = Input.GetAxisRaw("Horizontal");
         float vertical = Input.GetAxisRaw("Vertical");
-        Vector3 inputDirection = new Vector3(horizontal, 0f, vertical).normalized;
+        movement = new Vector3(horizontal, 0f, vertical).normalized;
 
-        // ´Ş¸®±â Ã³¸®
-        moveSpeed = Input.GetKey(KeyCode.LeftShift) ? runSpeed : walkSpeed;
-
-        // È¸Àü Ã³¸®
-        if (inputDirection != Vector3.zero)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(inputDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-        }
-
-        // Á¡ÇÁ Ã³¸®
-        if (grounded && Input.GetButtonDown("Jump"))
-        {
-            yVelocity = jumpSpeed;
-            if (hasAnimator) animator.SetBool(animIDJump, true);
-        }
-        else if (hasAnimator)
-        {
-            animator.SetBool(animIDJump, false);
-        }
-
-        moveDirection = transform.TransformDirection(inputDirection) * moveSpeed;
+        // Shift í‚¤ë¡œ ë‹¬ë¦¬ê¸° ì—¬ë¶€ í™•ì¸
+        bool isRunning = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+        currentSpeed = isRunning ? runSpeed : walkSpeed;
     }
 
-    private void ApplyGravity()
+    private void MouseInput()
     {
-        if (grounded)
-        {
-            yVelocity = -2f; // Áö¸é¿¡ ÀÖÀ» ¶§ ¼öÁ÷ ¼Óµµ ÃÊ±âÈ­
-        }
-        else if (hasAnimator)
-        {
-            animator.SetBool(animIDFreeFall, true);
-        }
+        if (Input.GetButtonDown("Fire1")) animator.SetTrigger("Attack");
 
-        yVelocity -= gravity * Time.deltaTime;
-        moveDirection.y = yVelocity;
+        // ë§ˆìš°ìŠ¤ë¡œ íšŒì „ ì²˜ë¦¬
+        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        transform.Rotate(Vector3.up * mouseX);
     }
 
-    private void MoveCharacter()
+    private void MotionSpeed()
     {
-        controller.Move(moveDirection * Time.deltaTime);
+        // ì• ë‹ˆë©”ì´ì…˜ íŒŒë¼ë¯¸í„° ì„¤ì •: Speed
+        float motionSpeed = movement.magnitude * currentSpeed;
+        if (motionSpeed > 0)
+        {
+            lastMotionSpeed = motionSpeed;
+        }
+        else
+        {
+            lastMotionSpeed = 0f; // ê°€ë§Œíˆ ìˆì„ ë•Œ Speedë¥¼ 0ìœ¼ë¡œ ì„¤ì •
+        }
+        animator.SetFloat("Speed", lastMotionSpeed);
     }
-    #endregion
+    private void Jump()
+    {
+        if (Input.GetKeyDown(KeyCode.Space) && controller.isGrounded)
+        {
+            yVelocity = jumpForce;
+            animator.SetBool("Jump", true); // JumpStartë¡œ ì „í™˜
+        }
+        else
+        {
+            animator.SetBool("Jump", false);
+        }
+    }
 
-    #region Ground Check
     private void GroundedCheck()
     {
-        Vector3 spherePosition = transform.position - new Vector3(0, groundedOffset, 0);
-        grounded = Physics.CheckSphere(spherePosition, groundedRadius, groundLayers, QueryTriggerInteraction.Ignore);
+        // ì¤‘ë ¥ ë° ì°©ì§€ í™•ì¸
+        isGrounded = controller.isGrounded;
+        animator.SetBool("Grounded", isGrounded);
 
-        if (hasAnimator)
+        if (isGrounded && yVelocity < 0)
         {
-            animator.SetBool(animIDGrounded, grounded);
+            yVelocity = -2f; // ì•½ê°„ì˜ ë§ˆì§„
         }
-    }
+        yVelocity += gravity * Time.deltaTime;
 
-    private void DrawGroundCheckGizmo()
-    {
-        Gizmos.color = grounded ? new Color(0f, 1f, 0f, 0.35f) : new Color(1f, 0f, 0f, 0.35f);
-        Gizmos.DrawSphere(transform.position - new Vector3(0, groundedOffset, 0), groundedRadius);
-    }
-    #endregion
-
-    #region Animation
-    private void UpdateAnimation()
-    {
-        if (!hasAnimator) return;
-
-        // ÀÔ·ÂÀÌ ¾øÀ¸¸é ¼Óµµ¸¦ 0À¸·Î ¼³Á¤ (Idle »óÅÂ·Î ÀüÈ¯)
-        float targetSpeed = (moveDirection.magnitude > 0.1f) ? moveSpeed : 0f;
-        animationBlend = Mathf.Lerp(animationBlend, targetSpeed, Time.deltaTime * 10f);
-
-        // ¾Ö´Ï¸ŞÀÌ¼Ç ÆÄ¶ó¹ÌÅÍ ¼³Á¤
-        animator.SetFloat(animIDSpeed, animationBlend);
-        animator.SetFloat(animIDMotionSpeed, moveDirection.magnitude > 0.1f ? 1f : 0f);
-        animator.SetBool(animIDGrounded, grounded);
-
-        // FreeFall »óÅÂ ÃÊ±âÈ­ (°øÁß¿¡ ÀÖÀ» ¶§¸¸ È°¼ºÈ­)
-        if (grounded && animator.GetBool(animIDFreeFall))
-        {
-            animator.SetBool(animIDFreeFall, false);
-        }
-    }
-
-    private void OnFootstep(AnimationEvent animationEvent)
-    {
-        if (animationEvent.animatorClipInfo.weight <= 0.5f || footstepAudioClips.Length == 0) return;
-
-        int index = Random.Range(0, footstepAudioClips.Length);
-        AudioSource.PlayClipAtPoint(footstepAudioClips[index], transform.TransformPoint(controller.center), footstepAudioVolume);
+        // FreeFall í™•ì¸
+        isFreeFalling = !isGrounded && yVelocity < 0; // í•˜ê°• ì¤‘ì¼ ë•Œ
+        animator.SetBool("FreeFall", isFreeFalling);
     }
 
     private void OnLand(AnimationEvent animationEvent)
@@ -192,5 +130,11 @@ public class PlayerController : MonoBehaviour
 
         AudioSource.PlayClipAtPoint(landingAudioClip, transform.TransformPoint(controller.center), footstepAudioVolume);
     }
-    #endregion
+    private void OnFootstep(AnimationEvent animationEvent)
+    {
+        if (animationEvent.animatorClipInfo.weight <= 0.5f || footstepAudioClips.Length == 0) return;
+
+        int index = Random.Range(0, footstepAudioClips.Length);
+    AudioSource.PlayClipAtPoint(footstepAudioClips[index], transform.TransformPoint(controller.center), footstepAudioVolume);
+    }
 }
