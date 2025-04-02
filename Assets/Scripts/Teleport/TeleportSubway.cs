@@ -11,7 +11,7 @@ public class TeleportSubway : MonoBehaviour
     private void Update()
     {
         cooltime += Time.deltaTime;
-        if (cooltime > 5f && cooltimeTelpo)
+        if (cooltime > 5f && !cooltimeTelpo)
         {
             cooltime = 0f;
             cooltimeTelpo = true;
