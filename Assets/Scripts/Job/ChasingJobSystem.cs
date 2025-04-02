@@ -11,7 +11,7 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float moveSpeed = 5f;      // 이동 속도 (NavMeshAgent에 반영)
 
     private GameObject[] enemyInstances;
-    private NavMeshAgent[] enemyAgents;
+    [SerializeField] private NavMeshAgent[] enemyAgents;
     private NativeArray<Vector3> enemyPositions;        // 적 위치
     private NativeArray<Vector3> targetDirections;      // Job에서 계산된 방향
     private const int ENEMY_COUNT = 200;
@@ -47,6 +47,8 @@ public class EnemySpawner : MonoBehaviour
 
     void Update()
     {
+        Vector3 playerPos = player.position;
+        
         // 적 위치 업데이트
         for (int i = 0; i < ENEMY_COUNT; i++)
         {
@@ -56,7 +58,7 @@ public class EnemySpawner : MonoBehaviour
         // Job 실행: 플레이어를 향한 방향 계산
         ChaseDirectionJob chaseJob = new ChaseDirectionJob
         {
-            playerPosition = player.position,
+            playerPosition = playerPos, //player.position,
             enemyPositions = enemyPositions,
             targetDirections = targetDirections
         };
@@ -67,6 +69,7 @@ public class EnemySpawner : MonoBehaviour
         // NavMeshAgent에 결과 적용
         for (int i = 0; i < ENEMY_COUNT; i++) 
         {
+            
             Vector3 targetPosition = enemyPositions[i] + targetDirections[i];
             enemyAgents[i].SetDestination(targetPosition);
         }
